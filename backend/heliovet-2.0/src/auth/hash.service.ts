@@ -1,1 +1,1 @@
-11
+import * as bcrypt from "bcrypt"
