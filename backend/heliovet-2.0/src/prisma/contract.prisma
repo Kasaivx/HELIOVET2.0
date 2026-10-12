@@ -1,0 +1,194 @@
+// use prisma-8
+
+
+/// VET STUFF///
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  username  String   @unique
+  role      UserRole
+  createdAt DateTime @default(now())
+  phone     String   @unique
+  owner     Owner?
+  clinic    Clinic?
+
+}
+model Clinic {
+  id            Int   @id @default(autoincrement())
+  status       ClinicStatus     @default(PENDING)
+  clinicname  String
+  nid       String   @unique
+  userId        Int  @unique
+  workingschedule  WorkingSchedule[]
+  licenseUrl   String
+  idCardUrl    String
+  location     Location?
+  vet Vet[]
+   user         User          @relation(fields: [userId], references: [id] ,onDelete:  Cascade)
+  
+}
+
+model Location {
+   id          Int @id @default(autoincrement())
+   name        String
+   clinicId    Int @unique
+  latitude     Float?
+  longitude    Float?
+  clinic       Clinic    @relation(fields: [clinicId], references: [id])
+}
+
+model WorkingSchedule {
+id Int @id @default(autoincrement())
+clinicid   Int
+
+clinic    Clinic @relation(fields: [clinicid], references: [id])
+
+WorkingDays DayOfWeek
+StartTime   Time()
+EndTime     Time()
+}
+
+
+model Vet {
+  id           Int           @id @default(autoincrement())        
+  fullName     String
+  phone        String?
+  clinicId     Int?
+  appointments Appointment[]
+  usagelogs    InvLog[]
+  clinic       Clinic?       @relation(fields: [clinicId], references: [id])
+ 
+}
+
+model Owner {
+  id       Int       @id @default(autoincrement())
+  userId   Int ?      @unique
+  nid      String   @unique
+  name     String
+  phone    String
+  address  String?
+  isGuest  Boolean
+  user     User?     @relation(fields: [userId], references: [id])
+  patients Patient[]
+}
+
+model Patient {
+  id           Int           @id @default(autoincrement())
+  species      String
+  cuid        String @default(cuid(2)) @unique
+  breed        String
+  age          Int?
+  ownerId      Int
+  createdAt    DateTime      @default(now())
+  updatedAt    temporal.updatedAt()
+  PetName      String
+  appointments Appointment[]
+  owner        Owner         @relation(fields: [ownerId], references: [id])
+}
+
+model Appointment {
+  id        Int               @id @default(autoincrement())
+  cuid        String @default(cuid(2)) @unique
+  date      DateTime
+  reason    String
+  status    AppointmentStatus @default(PENDING)
+  patientID Int
+  vetID     Int
+  patient   Patient           @relation(fields: [patientID], references: [id])
+  vet       Vet               @relation(fields: [vetID], references: [id])
+  medRec    MedicalRecord[]
+}
+
+model MedicalRecord {
+  id            Int          @id @default(autoincrement())
+  cuid        String @default(cuid(2)) @unique
+  appointmentID Int
+  diagnosis     String?
+  treatment     String?
+  notes         String?
+  instructions  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     temporal.updatedAt()
+  nextVisitDate DateTime?
+  attachments   Attachment[]
+  appointment   Appointment  @relation(fields: [appointmentID], references: [id])
+}
+
+model Attachment {
+  id         Int           @id @default(autoincrement())
+  url        String
+  cuid       String @default(cuid(2)) @unique
+  type       String?
+  medRecID   Int
+  uploadedAt DateTime      @default(now())
+  medRec     MedicalRecord @relation(fields: [medRecID], references: [id])
+}
+
+model Product {
+  id         Int      @id @default(autoincrement())
+  cuid        String @default(cuid(2)) @unique
+  name       String
+  qr         String?
+  minimumStock Int @default(5)
+  quantity   Int
+  expiryDate DateTime
+  isActive   Boolean  @default(true)
+  log        InvLog[]
+}
+
+model InvLog {
+  id            Int          @id @default(autoincrement())
+  cuid          String @default(cuid(2)) @unique
+  prdctID       Int
+  vetID         Int
+  timestamp     DateTime     @default(now())
+  action        Action
+  changedAmount String?
+  method        ActionMethod
+  prdct         Product      @relation(fields: [prdctID], references: [id])
+  vet           Vet          @relation(fields: [vetID], references: [id])
+}
+
+/// enums///
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  INPROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum UserRole {
+  VET
+  STAFF
+  OWNER
+  ADMIN
+  CLINIC
+}
+
+enum ClinicStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Action {
+  ADD
+  USE
+}
+
+enum ActionMethod {
+  MANUAL
+  SCAN
+}
+
+enum DayOfWeek {
+  MONDAY
+  SUNDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
