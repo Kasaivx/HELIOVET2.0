@@ -1,14 +1,13 @@
 import { Module } from '@nestjs/common';
 import { createObserveModule } from '@nestjs/observe';
-import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaService } from './prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
-
+import { AuthModule } from './auth/auth.module';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
-  imports: [PrismaModule,
+  imports: [PrismaModule,AuthModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
     ObserveModule.forRoot({
@@ -17,7 +16,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       serviceId: 'heliovet-2.0',
     }),
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: []
 })
 export class AppModule {}

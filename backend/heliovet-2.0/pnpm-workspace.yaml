@@ -1,4 +1,6 @@
 allowBuilds:
+  '@parcel/watcher': true
   bcrypt: false
   esbuild: false
+  unrs-resolver: true
   workerd: true
