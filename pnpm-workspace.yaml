@@ -1,0 +1,11 @@
+allowBuilds:
+  '@parcel/watcher': true
+  bcrypt: false
+  esbuild: false
+  unrs-resolver: true
+  workerd: true
+overrides:
+  "@prisma/orm-framework": "8.0.0-rc.25"
+  "@prisma/orm-toolchain": "8.0.0-rc.25"
+  "@prisma/orm-family-sql": "8.0.0-rc.25"
+  "@prisma/orm-target-postgres": "8.0.0-rc.25"

@@ -1,0 +1,217 @@
+// use prisma-8
+// Contract inferred from the live database schema. Edit as needed, then run `prisma contract emit`.
+
+model User {
+  id        Int                    @id @default(autoincrement())
+  createdAt DateTime(precision: 6) @default(now())
+  email     String                 @unique
+  password  String
+  phone     String                 @unique
+  role      UserRole
+  username  String                 @unique
+  clinic    Clinic?
+  owner     Owner?
+  vet       Vet?
+
+ 
+}
+
+model Owner {
+  id       Int       @id @default(autoincrement())
+  address  String?
+  isGuest  Boolean
+  name     String
+  nid      String    @unique
+  phone    String
+  userId   Int?      @unique
+  patients Patient[]
+  user     User?     @relation(fields: [userId], references: [id], map: "Owner_userId_fkey")
+}
+
+model Patient {
+  id           Int                    @id @default(autoincrement())
+  petName      String                 
+  age          Int?
+  breed        String
+  createdAt    DateTime(precision: 6) @default(now())
+  cuid         String                 @unique
+  ownerId      Int
+  species      String
+  updatedAt    DateTime(precision: 6)
+  appointments Appointment[]
+  owner        Owner                  @relation(fields: [ownerId], references: [id], map: "Patient_ownerId_fkey")
+
+  @@index([ownerId], name: "Patient_ownerId_idx")
+}
+
+model Clinic {
+  id               Int               @id @default(autoincrement())
+  NIN              String          
+  RC               String            
+  clinicname       String
+  nid              String            @unique(map: "Clinic_nid_key")
+  status         ClinicStatus         @default(PENDING)
+  userId           Int               @unique(map: "Clinic_userId_key")
+  location         Location?
+  vets             Vet[]
+  workingSchedules WorkingSchedule[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Clinic_userId_fkey")
+
+  
+}
+
+model Vet {
+  id           Int           @id(map: "Vet_pkey") @default(autoincrement())
+  NIN          String        @map("NIN")
+  clinicId     Int?
+  fullName     String
+  licenseUrl   String
+  phone        String
+  userId       Int?          @unique(map: "Vet_userId_key")
+  appointments Appointment[]
+  invLogs      InvLog[]
+  clinic       Clinic?       @relation(fields: [clinicId], references: [id], map: "Vet_clinicId_fkey")
+  user         User?         @relation(fields: [userId], references: [id], map: "Vet_userId_fkey")
+  isSuper      Boolean
+
+  @@index([clinicId], name: "Vet_clinicId_idx")
+}
+
+model Appointment {
+  id             Int                    @id(map: "Appointment_pkey") @default(autoincrement())
+  cuid           String                 @unique(map: "Appointment_cuid_key")
+  date           DateTime(precision: 6)
+  patientID      Int
+  reason         String
+  status         AppointmentStatus           @default(PENDING)
+  vetID          Int
+  medicalRecords MedicalRecord[]
+  patient        Patient                @relation(fields: [patientID], references: [id], map: "Appointment_patientID_fkey")
+  vet            Vet                    @relation(fields: [vetID], references: [id], map: "Appointment_vetID_fkey")
+
+  @@index([patientID], name: "Appointment_patientID_idx")
+  @@index([vetID], name: "Appointment_vetID_idx")
+
+}
+
+model MedicalRecord {
+  id            Int                     @id(map: "MedicalRecord_pkey") @default(autoincrement())
+  appointmentID Int
+  createdAt     DateTime(precision: 6)  @default(now())
+  cuid          String                  @unique(map: "MedicalRecord_cuid_key")
+  diagnosis     String?
+  instructions  String?
+  nextVisitDate DateTime(precision: 6)?
+  notes         String?
+  treatment     String?
+  updatedAt     DateTime(precision: 6)
+  attachments   Attachment[]
+  appointment   Appointment             @relation(fields: [appointmentID], references: [id], map: "MedicalRecord_appointmentID_fkey")
+
+  @@index([appointmentID], name: "MedicalRecord_appointmentID_idx")
+}
+
+model Attachment {
+  id            Int                    @id(map: "Attachment_pkey") @default(autoincrement())
+  cuid          String                 @unique(map: "Attachment_cuid_key")
+  medRecID      Int
+  type         String?                @map("type")
+  uploadedAt    DateTime(precision: 6) @default(now())
+  url           String
+  medicalRecord MedicalRecord          @relation(fields: [medRecID], references: [id], map: "Attachment_medRecID_fkey")
+
+  @@index([medRecID], name: "Attachment_medRecID_idx")
+}
+
+model Product {
+  id           Int                    @id(map: "Product_pkey") @default(autoincrement())
+  cuid         String                 @unique(map: "Product_cuid_key")
+  expiryDate   DateTime(precision: 6)
+  isActive     Boolean                @default(true)
+  minimumStock Int                    @default(5)
+  name         String
+  qr           String?
+  quantity     Int
+  invLogs      InvLog[]
+}
+
+model InvLog {
+  id            Int                    @id(map: "InvLog_pkey") @default(autoincrement())
+  action       Action
+  changedAmount String?
+  cuid          String                 @unique(map: "InvLog_cuid_key")
+  method        ActionMethod
+  prdctID       Int
+  timestamp     DateTime(precision: 6) @default(now())
+  vetID         Int
+  product       Product                @relation(fields: [prdctID], references: [id], map: "InvLog_prdctID_fkey")
+  vet           Vet                    @relation(fields: [vetID], references: [id], map: "InvLog_vetID_fkey")
+
+  @@index([prdctID], name: "InvLog_prdctID_idx")
+  @@index([vetID], name: "InvLog_vetID_idx")
+ 
+}
+
+model Location {
+  id        Int    @id(map: "Location_pkey") @default(autoincrement())
+  clinicId  Int    @unique(map: "Location_clinicId_key")
+  latitude  Float?
+  longitude Float?
+  name      String
+  clinic    Clinic @relation(fields: [clinicId], references: [id], map: "Location_clinicId_fkey")
+}
+
+model WorkingSchedule {
+  id          Int    @id(map: "WorkingSchedule_pkey") @default(autoincrement())
+  endTime     Time   @map("EndTime")
+  startTime   Time   @map("StartTime")
+  workingDays DayOfWeek  @map("WorkingDays")
+  clinicid    Int
+  clinic      Clinic @relation(fields: [clinicid], references: [id], map: "WorkingSchedule_clinicid_fkey")
+
+  @@index([clinicid], name: "WorkingSchedule_clinicid_idx")
+ 
+}
+
+
+
+
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  INPROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum UserRole {
+  VET
+  OWNER
+}
+
+enum ClinicStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Action {
+  ADD
+  USE
+}
+
+enum ActionMethod {
+  MANUAL
+  SCAN
+}
+
+enum DayOfWeek {
+  MONDAY
+  SUNDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
